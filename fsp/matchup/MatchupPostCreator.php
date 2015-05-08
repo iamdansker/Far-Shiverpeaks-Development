@@ -24,6 +24,7 @@ function checkMatchupPost(){
     $gw2 = new Gw2SDK;
     $matches = $gw2->getMatches();
     
+    //Get the relevant matchup for the given worldId
     $currentMatchup;
     foreach($matches as $matchup){
         if($matchup->red_world_id == $worldId || $matchup->green_world_id == $worldId || $matchup->blue_world_id == $worldId){
@@ -33,10 +34,12 @@ function checkMatchupPost(){
             break;
         }
     }
+    //I guess gw2's api is down?
     if(!isset($currentMatchup)){
         return;
     }
     
+    //Retrive startTime for latest posted matchup
     global $smcFunc;
     $request = $smcFunc['db_query']('', '
         SELECT value
@@ -44,20 +47,23 @@ function checkMatchupPost(){
         WHERE variable = "post_last_matchup_id"
         LIMIT 1'
     );
-    //New entry if number of rows <= 0
+    //Check if it has data for a previously posted matchup
     if ($smcFunc['db_num_rows']($request) > 0) {
         //Get selected row
         $row = $smcFunc['db_fetch_row']($request);
+        //Check if fetched matchup is newer
         if($row[0] != $currentMatchup->start_time){
             createMatchupPost($currentMatchup);
         }
     } else {
+        //no matchup has been posted before, so just post it now
         createMatchupPost($currentMatchup);
     }
 }
 
 function createMatchupPost($matchup){
     global $smcFunc, $sourcedir;
+    //Easy conversion from world id to world name
     $worldIdToWorldName = [
     '1001' =>"Anvil Rock",
     '1002' =>"Borlis Pass",
@@ -112,6 +118,7 @@ function createMatchupPost($matchup){
     '2301' =>"Baruch Bay [SP]"
    ];
     
+    //Update latest posted matchup post start time
     $smcFunc['db_insert']('replace', 
         '{db_prefix}settings', 
         array('variable' => 'string', 'value' => 'string'), 
@@ -121,8 +128,10 @@ function createMatchupPost($matchup){
     
     require_once($sourcedir . '/Subs-Post.php');
 
+    //used to redirect to gw2wvw.org
     $regionAndTier = explode("-",$matchup->wvw_match_id);
     
+    //Template for the matchup post content
 	$message = 'Servers
 [list]
     [li][color=green][b]' . $worldIdToWorldName[$matchup->green_world_id] . '[/b][/color][/li]
@@ -148,7 +157,7 @@ Want something added to this post? feel free and tell us!
 	);
 
     $posterOptions = array(
-        'id' => 6031,
+        'id' => 6031, //Far Shiverpeaks userid
         'update_post_count' => true,
     );
 	createPost($msgOptions, $topicOptions, $posterOptions); 
