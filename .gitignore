@@ -1,4 +1,6 @@
 /*
 /*/
 !/.gitignore
-!/smf/*
+!/LICENCE
+!/README.md
+!/fsp/*
