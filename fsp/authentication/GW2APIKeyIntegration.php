@@ -57,9 +57,14 @@ class GW2APIKeyIntegration {
         curl_close($curl);
         //Decode Json response
         $json = json_decode($response, true);
+        
         //Check if request was successful
         if ($json["text"] == "endpoint requires authentication") {
             throw new GW2APIKeyException('endpoint requires authentication', 1);
+            
+        //Known to be set if endpoint can't be found
+        } elseif(isset($json["error"])){
+            throw new GW2APIKeyException($json["error"], -1);
         }
         return $json;
     }
@@ -82,7 +87,6 @@ class GW2APIKeyIntegration {
         }
         return $json;
     }
-
 }
 
 class GW2APIKeyException extends Exception {
