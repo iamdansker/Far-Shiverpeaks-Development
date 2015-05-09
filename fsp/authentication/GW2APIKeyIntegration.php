@@ -53,18 +53,25 @@ class GW2APIKeyIntegration {
 
         //Perform request
         $response = curl_exec($curl);
+        //HTTP Status
+        $http_status = curl_getinfo($curl, CURLINFO_HTTP_CODE);
         //Close request connection
         curl_close($curl);
-        //Decode Json response
-        $json = json_decode($response, true);
-        
         //Check if request was successful
-        if ($json["text"] == "endpoint requires authentication") {
-            throw new GW2APIKeyException('endpoint requires authentication', 1);
-            
-        //Known to be set if endpoint can't be found
-        } elseif(isset($json["error"])){
-            throw new GW2APIKeyException($json["error"], -1);
+        if($http_status == 200){
+            //Decode Json response
+            $json = json_decode($response, true);
+
+            //Check if request was successful
+            if ($json["text"] == "endpoint requires authentication") {
+                throw new GW2APIKeyException('endpoint requires authentication', 1);
+
+            //Known to be set if endpoint can't be found
+            } elseif(isset($json["error"])){
+                throw new GW2APIKeyException($json["error"], 2);
+            }
+        } else {
+            throw new GW2APIKeyException('HTTP Code: '.$http_status, -1);
         }
         return $json;
     }
@@ -83,7 +90,7 @@ class GW2APIKeyIntegration {
                 !isset($json["world"]) ||
                 !isset($json["guilds"])
         ) {
-            throw new GW2APIKeyException('Could not parse account information', 2);
+            throw new GW2APIKeyException('Could not parse account information', 3);
         }
         return $json;
     }
