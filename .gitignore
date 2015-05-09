@@ -1,6 +1,5 @@
 /*
-/*/
 !/.gitignore
 !/LICENCE
 !/README.md
-!/fsp/*
+!/fsp
