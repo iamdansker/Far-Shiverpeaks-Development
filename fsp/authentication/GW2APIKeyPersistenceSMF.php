@@ -24,8 +24,8 @@
  */
 
 /**
- * Description of GW2APIKeyPersistence
- *
+ * Provide peristency to the retrieved information
+ * This is implemented based on SMF's smcFunc database access methods
  * @author jeppe
  */
 require_once 'GW2APIKeyIntegration.php';
@@ -223,6 +223,35 @@ class GW2APIKeyPersistence extends GW2APIKeyIntegration{
     }
     
     /**
+     * Retrieve account information from all users from the database and
+     * check if it has expired
+     */
+    function checkAllAccountData(){
+        global $smcFunc;
+        //Retrieve all account data
+        $query = $smcFunc['db_query']('', '
+			SELECT smf_user_id, uuid, username, world, expires
+			FROM {db_prefix}gw2_account'
+        );
+        if ($smcFunc['db_num_rows']($query) <= 0) {
+            //No users have any account data
+            return;
+        }
+        //Loop through each users API Key
+        while ($row = $smcFunc['db_fetch_row']($query)){
+            $this->debug_echo("Checking account info for user: $row[0]");
+            //Prevent the script from exiting after many checks as it might take a while
+            set_time_limit(30);
+            //Check if the account's data has expired, if so, calls onAccountInfoExpired($userId)
+            $this->checkIfAccoundDataExpired($row[0], $row[4]);
+            //Small sleep time of 10ms
+            usleep(10000);
+        }
+        //cleanup
+        $smcFunc['db_free_result']($query);
+    }
+    
+    /**
      * Called when a user's account info has been updated
      * @param type $userId
      * @param type $values
@@ -274,9 +303,20 @@ class GW2APIKeyPersistence extends GW2APIKeyIntegration{
             $this->updateAccountInfoExpires($userId, $timeout);
         //If it has already expired, the expires time will be negative, so don't expire
         //again if it isn't above 0
-        } elseif($accountInfo["expires"] < time() && $accountInfo["expires"] >= 0){
+        } else {
+            $this->checkIfAccoundDataExpired($userId,$accountInfo["expires"]);
+        }
+    }
+    
+    /**
+     * Check if an accounts data has expired, if so, call onAccountInfoExpired($userId)
+     * @param type $userId
+     * @param type $expires
+     */
+    function checkIfAccoundDataExpired($userId, $expires){
+        if($expires < time() && $expires >= 0){
             $this->onAccountInfoExpired($userId);
-            $this->updateAccountInfoExpires($userId, -$accountInfo["expires"]);
+            $this->updateAccountInfoExpires($userId, -$expires);
         }
     }
     
