@@ -1,4 +1,5 @@
 <?php
+
 /*
  * The MIT License
  *
@@ -29,17 +30,18 @@
  * @author jeppe
  */
 class GW2APIKeyIntegration {
+
     /**
      * Make a request for the GW2 JSON API
      * @param type $endPoint
      * @param type $apiKey
      * @return JSON
      */
-    function makeRequest($endPoint, $apiKey){
+    function makeRequest($endPoint, $apiKey) {
         //Prepare cURL request
-		$curl = curl_init();
+        $curl = curl_init();
         //Set URL
-        curl_setopt($curl, CURLOPT_URL,"https://api.guildwars2.com/" . $endPoint);
+        curl_setopt($curl, CURLOPT_URL, "https://api.guildwars2.com/" . $endPoint);
         //Return response as a String instead of outputting to a screen
         curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
 
@@ -48,45 +50,46 @@ class GW2APIKeyIntegration {
         $headers[] = 'Authorization: Bearer ' . $apiKey;
         //Add Request Header
         curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
-        
+
         //Perform request
-        $response = curl_exec ($curl);
+        $response = curl_exec($curl);
         //Close request connection
-        curl_close ($curl);
+        curl_close($curl);
         //Decode Json response
         $json = json_decode($response, true);
         //Check if request was successful
-        if($json["text"] == "endpoint requires authentication"){
+        if ($json["text"] == "endpoint requires authentication") {
             throw new GW2APIKeyException('endpoint requires authentication', 1);
         }
         return $json;
     }
-    
+
     /**
      * Request information from the account endpoint
      * @param type $apiKey
      * @return JSON
      * @throws GW2APIKeyException
      */
-    function requestAccountInfo($apiKey){
+    function requestAccountInfo($apiKey) {
         $json = $this->makeRequest("v2/account", $apiKey);
-        if(
-            !isset($json["id"]) || 
-            !isset($json["name"]) || 
-            !isset($json["world"]) || 
-            !isset($json["guilds"])
-        ){
+        if (
+                !isset($json["id"]) ||
+                !isset($json["name"]) ||
+                !isset($json["world"]) ||
+                !isset($json["guilds"])
+        ) {
             throw new GW2APIKeyException('Could not parse account information', 2);
         }
         return $json;
     }
+
 }
 
 class GW2APIKeyException extends Exception {
+
     // Redefine the exception so message isn't optional
     public function __construct($message, $code = 0, Exception $previous = null) {
         // some code
-    
         // make sure everything is assigned properly
         parent::__construct($message, $code, $previous);
     }
@@ -95,6 +98,5 @@ class GW2APIKeyException extends Exception {
     public function __toString() {
         return __CLASS__ . ": [{$this->code}]: {$this->message}\n";
     }
+
 }
-
-
