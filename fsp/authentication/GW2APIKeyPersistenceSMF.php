@@ -28,6 +28,7 @@
  * This is implemented based on SMF's smcFunc database access methods
  * @author jeppe
  */
+require_once '../guilds/Guilds.php';
 require_once 'GW2APIKeyIntegration.php';
 class GW2APIKeyPersistence extends GW2APIKeyIntegration{
     
@@ -41,6 +42,12 @@ class GW2APIKeyPersistence extends GW2APIKeyIntegration{
     const successfulTimeout = 907200; //A week and a half in seconds
 
     private $apiKeyDBField = "cust_apikey";
+    private $guildsAPI;
+    
+    public function __construct() {
+        $this->guildsAPI = new Guilds();
+    }
+
     
     function getUserAPIKey($userId){
         global $smcFunc;
@@ -162,6 +169,7 @@ class GW2APIKeyPersistence extends GW2APIKeyIntegration{
                 $userId, $json["id"], $json["name"], $json["world"], $this->calculateSuccessfulTimeoutTime()
             );
             $this->persistAccountInfo($values);
+            $this->persistGuildsInfo($userId, $json["guilds"]);
             $this->onAccountInfoUpdated($userId, $values);
         }
         return $json;
@@ -179,6 +187,34 @@ class GW2APIKeyPersistence extends GW2APIKeyIntegration{
             'smf_user_id' => 'int', 'uuid' => 'string', 'username' => 'string', "world" => "int", "expires" => "int"
         );
         $smcFunc['db_insert']('replace', '{db_prefix}gw2_account', $fields, $values, array('smf_user_id'));
+    }
+    
+    /**
+     * Save new guilds a user have joined and remove guilds a user have left
+     * @global type $smcFunc
+     * @param type $userId
+     * @param type $guildIds
+     */
+    function persistGuildsInfo($userId, $guildIds){
+        global $smcFunc;
+        //Save guilds the player is in
+        foreach($guildIds as $guildId){
+            $this->debug_echo($guildId);
+            //Check if user is a member of the guild
+            //Add user if not
+            if(!$this->guildsAPI->isMemberOfGuild($userId, $guildId)){
+                $this->guildsAPI->addMember($userId, $guildId);
+            }
+        }
+        //Remove user from guilds the user is no longer in
+        $query = $this->guildsAPI->queryMemberOfGuildIds($userId);
+        while ($guildId = $smcFunc['db_fetch_row']($query)[0]){
+            if(!in_array($guildId, $guildIds)){
+                $this->guildsAPI->removeMember($userId, $guildId);
+            }
+        }
+        //cleanup        
+        $smcFunc['db_free_result']($query);
     }
     
     /**
