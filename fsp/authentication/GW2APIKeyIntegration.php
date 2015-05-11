@@ -63,15 +63,15 @@ class GW2APIKeyIntegration {
             $json = json_decode($response, true);
 
             //Check if request was successful
-            if ($json["text"] == "endpoint requires authentication") {
-                throw new GW2APIKeyException('endpoint requires authentication', $response, 1);
+            if (isset($json["text"]) && $json["text"] == "endpoint requires authentication") {
+                throw new GW2APIKeyException('endpoint requires authentication', $apiKey, $response, 1);
 
             //Known to be set if endpoint can't be found
             } elseif(isset($json["error"])){
-                throw new GW2APIKeyException($json["error"], $response, 2);
+                throw new GW2APIKeyException($json["error"], $apiKey, $response, 2);
             }
         } else {
-            throw new GW2APIKeyException('HTTP Code: '.$http_status, $response, -1);
+            throw new GW2APIKeyException('HTTP Code: '.$http_status, $apiKey, $response, -1);
         }
         return $json;
     }
@@ -90,16 +90,18 @@ class GW2APIKeyIntegration {
                 !isset($json["world"]) ||
                 !isset($json["guilds"])
         ) {
-            throw new GW2APIKeyException('Could not parse account information', $json, 3);
+            throw new GW2APIKeyException('Could not parse account information', $apiKey, $json, 3);
         }
         return $json;
     }
 }
 
 class GW2APIKeyException extends Exception {
+    private $apiKey;
     private $response;
-    public function __construct($message, $response, $code = 0, Exception $previous = null) {
+    public function __construct($message, $apiKey, $response, $code = 0, Exception $previous = null) {
         parent::__construct($message, $code, $previous);
+        $this->apiKey = $apiKey;
         $this->response = $response;
     }
     
@@ -108,7 +110,7 @@ class GW2APIKeyException extends Exception {
     }
     
     public function __toString() {
-        return __CLASS__ . ": [{$this->code}]: {$this->message}\n";
+        return __CLASS__ . ": [{$this->code}]: {$this->message} APIKey: {$this->apiKey} Response: {$this->response}\n";
     }
 
 }
