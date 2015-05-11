@@ -28,8 +28,8 @@
  * This is implemented based on SMF's smcFunc database access methods
  * @author jeppe
  */
-require_once '../guilds/Guilds.php';
 require_once 'GW2APIKeyIntegration.php';
+require_once($_SERVER['DOCUMENT_ROOT'].'/fsp/guilds/Guilds.php'); 
 class GW2APIKeyPersistence extends GW2APIKeyIntegration{
     
     /******************************
