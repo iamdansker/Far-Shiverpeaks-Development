@@ -159,6 +159,7 @@ Want something added to this post? feel free and tell us!
     $posterOptions = array(
         'id' => 6031, //Far Shiverpeaks userid
         'update_post_count' => true,
+        'ip' => "127.0.0.1",
     );
 	createPost($msgOptions, $topicOptions, $posterOptions); 
 }
